@@ -8,6 +8,7 @@
     "dist/preload/**/*",
     "dist/renderer/**/*",
     "dist/core/**/*",
+    "dist/shared/**/*",
     "node_modules/**/*"
   ],
   "directories": {

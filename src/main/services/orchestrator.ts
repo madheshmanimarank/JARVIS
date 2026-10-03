@@ -1,4 +1,4 @@
-import { AIRouter, getAIRouter } from '@core/ai/AIRouter.js';
+import { AIRouter, createAIRouter, getAIRouter } from '@core/ai/AIRouter.js';
 import { ToolManager } from '@core/tools/ToolManager.js';
 import { MemoryManager } from '@core/memory/MemoryManager.js';
 import { DatabaseManager } from './database.js';
@@ -25,10 +25,10 @@ export class AIOrchestrator extends EventEmitter<OrchestratorEvents> {
   private isStreaming = false;
   private abortController: AbortController | null = null;
 
-  constructor(settings: AppSettings) {
+  constructor(settings: AppSettings, router?: AIRouter) {
     super();
     this.settings = settings;
-    this.router = getAIRouter() || new AIRouter({
+    this.router = router ?? getAIRouter() ?? createAIRouter({
       defaultProvider: settings.ai.provider,
       ollamaUrl: settings.ai.ollamaUrl,
       ollamaModel: settings.ai.ollamaModel,
@@ -484,8 +484,8 @@ export class AIOrchestrator extends EventEmitter<OrchestratorEvents> {
 
 let orchestratorInstance: AIOrchestrator | null = null;
 
-export function createAIOrchestrator(settings: AppSettings): AIOrchestrator {
-  orchestratorInstance = new AIOrchestrator(settings);
+export function createAIOrchestrator(settings: AppSettings, router?: AIRouter): AIOrchestrator {
+  orchestratorInstance = new AIOrchestrator(settings, router);
   return orchestratorInstance;
 }
 

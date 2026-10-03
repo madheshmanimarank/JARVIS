@@ -262,8 +262,26 @@ export class AIRouter {
 let routerInstance: AIRouter | null = null;
 
 export function createAIRouter(config?: Partial<RouterConfig>): AIRouter {
-  routerInstance = new AIRouter(config);
+  if (!routerInstance) {
+    routerInstance = new AIRouter(config);
+    return routerInstance;
+  }
+
+  if (config) {
+    routerInstance.setConfig(config);
+  }
+
   return routerInstance;
+}
+
+export async function initializeAIRouter(config?: Partial<RouterConfig>): Promise<AIRouter> {
+  const router = createAIRouter(config);
+  try {
+    await router.getAllProviderStatuses();
+  } catch (error) {
+    console.warn('AIRouter initialization failed:', error);
+  }
+  return router;
 }
 
 export function getAIRouter(): AIRouter | null {

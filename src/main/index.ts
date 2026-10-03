@@ -1,15 +1,14 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, shell } from 'electron';
 import * as path from 'path';
-import * as fs from 'fs';
-import { setupIPCHandlers, getOrchestrator } from './ipc/handlers.js';
+import { setupIPCHandlers } from './ipc/handlers.js';
 import { DatabaseManager } from './services/database.js';
 
 let mainWindow: BrowserWindow | null = null;
 
 const createWindow = () => {
   const preloadPath = app.isPackaged
-    ? path.join(process.resourcesPath, 'preload/preload/index.js')
-    : path.join(__dirname, '../../../preload/preload/index.js');
+    ? path.join(process.resourcesPath, 'preload', 'preload', 'index.js')
+    : path.join(__dirname, '../preload/preload/index.js');
 
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -61,28 +60,6 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   // Orchestrator cleanup handled automatically
 });
-
-ipcMain.handle('dialog:openFile', async () => {
-  if (!mainWindow) return undefined;
-  const result = await dialog.showOpenDialog(mainWindow, { properties: ['openFile'] });
-  return result.canceled ? undefined : result.filePaths;
-});
-
-ipcMain.handle('dialog:saveFile', async () => {
-  if (!mainWindow) return undefined;
-  const result = await dialog.showSaveDialog(mainWindow);
-  return result.canceled ? undefined : result.filePath;
-});
-
-ipcMain.handle('dialog:openDirectory', async () => {
-  if (!mainWindow) return undefined;
-  const result = await dialog.showOpenDialog(mainWindow, { properties: ['openDirectory'] });
-  return result.canceled ? undefined : result.filePaths;
-});
-
-ipcMain.handle('app:getPath', (_event, name: string) => app.getPath(name as any));
-ipcMain.handle('app:getVersion', () => app.getVersion());
-ipcMain.handle('app:quit', () => app.quit());
 
 app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
   if (url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1')) {

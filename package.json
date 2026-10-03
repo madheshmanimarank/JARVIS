@@ -15,7 +15,6 @@
     "start": "electron dist/main/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "type": "module",
   "devDependencies": {
     "@electron/rebuild": "^4.2.0",
     "@types/glob": "^8.1.0",
@@ -25,6 +24,7 @@
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react-swc": "^3.5.0",
+    "autoprefixer": "^10.6.1",
     "electron": "^42.3.3",
     "electron-builder": "^24.0.0",
     "eslint": "^8.57.0",

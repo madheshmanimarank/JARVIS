@@ -15,6 +15,7 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let orchestrator: AIOrchestrator | null = null;
 let settings: AppSettings = DEFAULT_SETTINGS as AppSettings;
+let routerInitializationPromise: Promise<AIRouter> | null = null;
 
 export function setupIPCHandlers(window: BrowserWindow): void {
   mainWindow = window;
@@ -34,7 +35,42 @@ export function setupIPCHandlers(window: BrowserWindow): void {
 function initializeServices(): void {
   const db = DatabaseManager.getInstance();
   settings = db.getSettings();
-  orchestrator = createAIOrchestrator(settings);
+
+  const router = createAIRouter({
+    defaultProvider: settings.ai.provider,
+    ollamaUrl: settings.ai.ollamaUrl,
+    ollamaModel: settings.ai.ollamaModel,
+    groqApiKey: settings.ai.groqApiKey,
+    groqModel: settings.ai.groqModel,
+    localFirst: settings.privacy.localFirst,
+  });
+  routerInitializationPromise = Promise.resolve(router).then(async (initializedRouter) => {
+    try {
+      await initializedRouter.getAllProviderStatuses();
+    } catch (error) {
+      console.warn('AIRouter status preflight failed:', error);
+    }
+    return initializedRouter;
+  });
+
+  orchestrator = createAIOrchestrator(settings, router);
+}
+
+async function getInitializedRouter(): Promise<AIRouter> {
+  const existingRouter = getAIRouter();
+  if (existingRouter) {
+    return existingRouter;
+  }
+
+  if (!routerInitializationPromise) {
+    initializeServices();
+  }
+
+  const router = await routerInitializationPromise;
+  if (!router) {
+    throw new Error('Router not initialized');
+  }
+  return router;
 }
 
 function registerAIHandlers(): void {
@@ -54,14 +90,12 @@ function registerAIHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS['ai:models'], async (_event, providerType) => {
-    const router = getAIRouter();
-    if (!router) throw new Error('Router not initialized');
+    const router = await getInitializedRouter();
     return router.listModels(providerType);
   });
 
   ipcMain.handle(IPC_CHANNELS['ai:status'], async (_event, providerType) => {
-    const router = getAIRouter();
-    if (!router) throw new Error('Router not initialized');
+    const router = await getInitializedRouter();
     if (providerType) {
       return router.getProviderStatus(providerType);
     }
@@ -69,14 +103,12 @@ function registerAIHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS['ai:pull-model'], async (_event, name) => {
-    const router = getAIRouter();
-    if (!router) throw new Error('Router not initialized');
+    const router = await getInitializedRouter();
     return router.pullOllamaModel(name);
   });
 
   ipcMain.handle(IPC_CHANNELS['ai:delete-model'], async (_event, name) => {
-    const router = getAIRouter();
-    if (!router) throw new Error('Router not initialized');
+    const router = await getInitializedRouter();
     return router.deleteOllamaModel(name);
   });
 }
